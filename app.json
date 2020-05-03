@@ -1,13 +1,16 @@
 {
   "expo": {
-    "name": "timeUntil",
+    "name": "Za ile event?",
     "slug": "timeUntil",
-    "platforms": ["ios", "android", "web"],
+    "platforms": ["android"],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "androidStatusBar": {
+      "backgroundColor": "#3da7db"
+    },
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splashscreen.png",
       "resizeMode": "contain",
       "backgroundColor": "#3da7db"
     },
@@ -15,8 +18,9 @@
       "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": ["**/*"],
-    "ios": {
-      "supportsTablet": true
+    "android": {
+      "package": "com.Arciiix.timeUntil",
+      "backgroundColor": "#3da7db"
     }
   }
 }

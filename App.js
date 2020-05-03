@@ -10,6 +10,7 @@ import {
   Button,
   Image,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { createAppContainer } from "react-navigation";
 import { createStackNavigator } from "react-navigation-stack";
@@ -157,7 +158,6 @@ class Home extends React.Component {
     headerShown: false,
   };
   render() {
-    console.log("iloveogdf");
     if (this.state.events != events) {
       this.setState({ events: events });
     }
@@ -197,8 +197,18 @@ class Home extends React.Component {
         </View>
       );
     } else {
-      //DEV - make a loading page
-      return <Text>Loading...</Text>;
+      return (
+        <View
+          style={{
+            backgroundColor: "#3da7db",
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ActivityIndicator size={100} color="#ffff" />
+        </View>
+      );
     }
   }
   async componentDidMount() {

@@ -21,9 +21,13 @@ import DatePicker from "react-native-modal-datetime-picker";
 import Swipeout from "react-native-swipeout";
 import * as ImagePicker from "expo-image-picker";
 import * as Permissions from "expo-permissions";
+import { AsyncStorage } from "react-native";
+
+//All events
+let events;
 
 //Text and background of counter colors
-let textColor = "#000000";
+let textColor = "#ffff";
 let dateBackgroundColor = "#000000";
 let currentlySelectingTextColor = false;
 
@@ -146,57 +150,35 @@ class Home extends React.Component {
     super(props);
     this.state = {
       isLoading: true,
+      events: null,
     };
   }
   static navigationOptions = {
     headerShown: false,
   };
   render() {
-    if (!this.state.isLoading) {
+    console.log("iloveogdf");
+    if (this.state.events != events) {
+      this.setState({ events: events });
+    }
+    if (!this.state.isLoading && this.state.events == events) {
       return (
         <View style={homeStyle.container}>
           <ScrollView horizontal={false}>
-            <Counter
-              textColor="white"
-              name="Testowy event"
-              date={new Date("2020-06-03")}
-              imageLink={require("./test.jpg")}
-              isImage={true}
-              id={1}
-            />
-
-            <Counter
-              textColor="white"
-              name="Testowy event numer 2 - urodzinki :)"
-              date={new Date("2020-07-03")}
-              isImage={false}
-              backgroundColor={"lightgreen"}
-              id={2}
-            />
-            <Counter
-              textColor="white"
-              name="Testowy event numer 3 :)"
-              date={new Date("2020-08-05")}
-              isImage={false}
-              backgroundColor={"lightgreen"}
-              id={3}
-            />
-            <Counter
-              textColor="white"
-              name="Testowy event numer 4 :)"
-              date={new Date("2020-05-22")}
-              isImage={false}
-              backgroundColor={"lightgreen"}
-              id={4}
-            />
-            <Counter
-              textColor="white"
-              name="Testowy event numer 5 :)"
-              date={new Date("2020-06-18")}
-              isImage={false}
-              backgroundColor={"lightgreen"}
-              id={5}
-            />
+            {this.state.events.map((e) => {
+              return (
+                <Counter
+                  name={e.name}
+                  date={new Date(e.date)}
+                  textColor={e.textColor}
+                  imageLink={{ uri: e.image }}
+                  isImage={e.isImage}
+                  backgroundColor={e.backgroundColor}
+                  id={e.id}
+                  reRender={() => this.forceUpdate()}
+                />
+              );
+            })}
           </ScrollView>
           <View style={homeStyle.add}>
             <FloatingActionButton
@@ -224,8 +206,12 @@ class Home extends React.Component {
       Manrope: require("./assets/fonts/Manrope.ttf"),
       Jost: require("./assets/fonts/Jost.ttf"),
     });
+    await fetchItems();
     this.setState({
       isLoading: false,
+    });
+    this.props.navigation.addListener("didFocus", () => {
+      this.forceUpdate();
     });
   }
 }
@@ -248,8 +234,9 @@ class Counter extends React.Component {
               { text: "Nie" },
               {
                 text: "Tak",
-                onPress: () => {
-                  deleteEvent(this.id);
+                onPress: async () => {
+                  events = await deleteEvent(this.id);
+                  this.props.reRender();
                 },
               },
             ],
@@ -458,9 +445,25 @@ class Add extends React.Component {
       </View>
     );
   }
-  submit() {
-    //DEV
-    //Zapisywaie do bazy danych/localstoarge
+  async submit() {
+    let {
+      datePickerVisible,
+      imageBtnColor,
+      imageBtnTitle,
+      ...obj
+    } = this.state;
+    if (obj.name == "") return;
+    if (obj.isImage && obj.image == null) return;
+    try {
+      let elems = JSON.parse(await AsyncStorage.getItem("EVENTS"));
+      let elemsArray = elems != null ? elems : new Array();
+      obj.id = elemsArray.length + 1;
+      elemsArray.push(obj);
+      await AsyncStorage.setItem("EVENTS", JSON.stringify(elemsArray));
+      events.push(obj);
+    } catch (err) {
+      console.log(err);
+    }
     this.props.navigation.navigate("Home");
   }
   componentDidMount() {
@@ -499,9 +502,45 @@ class PickColor extends React.Component {
   }
 }
 
+function fetchItems() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      events = JSON.parse(await AsyncStorage.getItem("EVENTS"));
+      if (events == null) {
+        events = new Array();
+        events.push({
+          name: "Nie masz żadnych eventów, co ty na to, żeby jakiś dodać? 🙂",
+          date: new Date(),
+          isImage: false,
+          image: null,
+          backgroundColor: "#3da7db",
+          textColor: "#ffff",
+        });
+      }
+      resolve();
+    } catch (err) {
+      console.log(err);
+      reject();
+    }
+  });
+}
+
 function deleteEvent(id) {
-  //DEV
-  console.log("Usuwam event o id " + id);
+  return new Promise(async (resolve, reject) => {
+    try {
+      let oldEvents = JSON.parse(await AsyncStorage.getItem("EVENTS"));
+      let newEvents = oldEvents.filter((e) => e.id != id);
+      if (newEvents.length > 0) {
+        await AsyncStorage.setItem("EVENTS", JSON.stringify(newEvents));
+      } else {
+        await AsyncStorage.removeItem("EVENTS");
+      }
+      resolve(newEvents);
+    } catch (err) {
+      console.log(err);
+      reject();
+    }
+  });
 }
 
 const AppNavigator = createStackNavigator(
